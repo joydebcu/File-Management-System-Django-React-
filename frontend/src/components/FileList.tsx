@@ -88,16 +88,33 @@ export const FileList: React.FC = () => {
   }
 
   const totalStorageSavings = files?.reduce((sum, file) => sum + file.storage_savings, 0) || 0;
+  const totalFiles = files?.length || 0;
+  const uniqueFiles = files?.filter(file => file.reference_count === 1).length || 0;
+  const duplicatedFiles = totalFiles - uniqueFiles;
 
   return (
     <div className="p-6">
       <SearchAndFilter onFilterChange={setFilters} />
       
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold text-gray-900">Storage Savings</h2>
-        <p className="text-lg text-primary-600">
-          Total savings from deduplication: {formatFileSize(totalStorageSavings)}
-        </p>
+      <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white p-4 rounded-lg shadow">
+          <h3 className="text-sm font-medium text-gray-500">Total Storage Savings</h3>
+          <p className="mt-2 text-2xl font-semibold text-primary-600">
+            {formatFileSize(totalStorageSavings)}
+          </p>
+        </div>
+        <div className="bg-white p-4 rounded-lg shadow">
+          <h3 className="text-sm font-medium text-gray-500">Unique Files</h3>
+          <p className="mt-2 text-2xl font-semibold text-green-600">
+            {uniqueFiles}
+          </p>
+        </div>
+        <div className="bg-white p-4 rounded-lg shadow">
+          <h3 className="text-sm font-medium text-gray-500">Deduplicated Files</h3>
+          <p className="mt-2 text-2xl font-semibold text-yellow-600">
+            {duplicatedFiles}
+          </p>
+        </div>
       </div>
       
       <div className="overflow-x-auto">
@@ -118,6 +135,9 @@ export const FileList: React.FC = () => {
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 References
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Storage Savings
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
@@ -143,10 +163,17 @@ export const FileList: React.FC = () => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
-                    <DocumentDuplicateIcon className="h-5 w-5 text-gray-400 mr-2" />
+                    <DocumentDuplicateIcon className={`h-5 w-5 mr-2 ${
+                      file.reference_count > 1 ? 'text-yellow-500' : 'text-gray-400'
+                    }`} />
                     <span className="text-sm text-gray-500">
                       {file.reference_count} {file.reference_count === 1 ? 'reference' : 'references'}
                     </span>
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm text-gray-500">
+                    {file.storage_savings > 0 ? formatFileSize(file.storage_savings) : '-'}
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

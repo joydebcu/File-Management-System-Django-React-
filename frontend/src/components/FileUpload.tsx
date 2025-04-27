@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { fileService } from '../services/fileService';
-import { CloudArrowUpIcon } from '@heroicons/react/24/outline';
+import { CloudArrowUpIcon, DocumentDuplicateIcon } from '@heroicons/react/24/outline';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 interface FileUploadProps {
@@ -10,15 +10,25 @@ interface FileUploadProps {
 export const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isDuplicate, setIsDuplicate] = useState<boolean>(false);
   const queryClient = useQueryClient();
 
   const uploadMutation = useMutation({
     mutationFn: fileService.uploadFile,
-    onSuccess: () => {
+    onSuccess: (response) => {
       // Invalidate and refetch files query
       queryClient.invalidateQueries({ queryKey: ['files'] });
       setSelectedFile(null);
+      setSuccessMessage(response.message ?? 'File uploaded successfully');
+      setIsDuplicate(response.is_duplicate ?? false);
       onUploadSuccess();
+      
+      // Clear success message after 5 seconds
+      setTimeout(() => {
+        setSuccessMessage(null);
+        setIsDuplicate(false);
+      }, 5000);
     },
     onError: (error) => {
       setError('Failed to upload file. Please try again.');
@@ -30,6 +40,8 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess }) => {
     if (event.target.files && event.target.files[0]) {
       setSelectedFile(event.target.files[0]);
       setError(null);
+      setSuccessMessage(null);
+      setIsDuplicate(false);
     }
   };
 
@@ -84,6 +96,18 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess }) => {
         {error && (
           <div className="text-sm text-red-600 bg-red-50 p-2 rounded">
             {error}
+          </div>
+        )}
+        {successMessage && (
+          <div className={`text-sm p-2 rounded ${
+            isDuplicate 
+              ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' 
+              : 'bg-green-50 text-green-700 border border-green-200'
+          }`}>
+            <div className="flex items-center">
+              {isDuplicate && <DocumentDuplicateIcon className="h-5 w-5 mr-2" />}
+              {successMessage}
+            </div>
           </div>
         )}
         <button
