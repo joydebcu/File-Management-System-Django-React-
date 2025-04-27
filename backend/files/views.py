@@ -7,19 +7,20 @@ from .serializers import FileSerializer
 import hashlib
 from django.db import transaction
 from django.db.models import Q
+from rest_framework.decorators import action
 
 # Create your views here.
 
 class FileFilter(django_filters.FilterSet):
     min_size = django_filters.NumberFilter(field_name="size", lookup_expr='gte')
     max_size = django_filters.NumberFilter(field_name="size", lookup_expr='lte')
-    file_type = django_filters.CharFilter(field_name="file_type", lookup_expr='iexact')
+    file_type = django_filters.CharFilter(field_name="file_type", lookup_expr='icontains')
     uploaded_after = django_filters.DateTimeFilter(field_name="uploaded_at", lookup_expr='gte')
     uploaded_before = django_filters.DateTimeFilter(field_name="uploaded_at", lookup_expr='lte')
 
     class Meta:
         model = File
-        fields = ['file_type', 'size']
+        fields = ['file_type', 'size', 'uploaded_at']
 
 class FileViewSet(viewsets.ModelViewSet):
     queryset = File.objects.all()
@@ -29,6 +30,14 @@ class FileViewSet(viewsets.ModelViewSet):
     search_fields = ['original_filename', 'file_type']
     ordering_fields = ['original_filename', 'size', 'uploaded_at', 'file_type']
     ordering = ['-uploaded_at']
+
+    @action(detail=False, methods=['get'])
+    def file_types(self, request):
+        """Get all unique file types in the database"""
+        file_types = File.objects.values_list('file_type', flat=True).distinct()
+        return Response({
+            'file_types': list(file_types)
+        })
 
     def get_queryset(self):
         queryset = super().get_queryset()

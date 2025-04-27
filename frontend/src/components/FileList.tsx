@@ -1,14 +1,16 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { fileService } from '../services/fileService';
 import { File as FileType } from '../types/file';
 import { DocumentIcon, TrashIcon, ArrowDownTrayIcon, DocumentDuplicateIcon } from '@heroicons/react/24/outline';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { formatFileSize, formatDate } from '../utils/formatters';
-import { SearchAndFilter } from './SearchAndFilter';
 
-export const FileList: React.FC = () => {
+interface FileListProps {
+  filters?: any;
+}
+
+export const FileList: React.FC<FileListProps> = ({ filters = {} }) => {
   const queryClient = useQueryClient();
-  const [filters, setFilters] = useState<any>({});
 
   // Query for fetching files
   const { data: files, isLoading, error } = useQuery({
@@ -94,52 +96,41 @@ export const FileList: React.FC = () => {
 
   return (
     <div className="p-6">
-      <SearchAndFilter onFilterChange={setFilters} />
-      
       <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white p-4 rounded-lg shadow">
-          <h3 className="text-sm font-medium text-gray-500">Total Storage Savings</h3>
-          <p className="mt-2 text-2xl font-semibold text-primary-600">
-            {formatFileSize(totalStorageSavings)}
-          </p>
+          <h3 className="text-lg font-medium text-gray-900">Total Files</h3>
+          <p className="mt-2 text-3xl font-bold text-gray-900">{totalFiles}</p>
         </div>
         <div className="bg-white p-4 rounded-lg shadow">
-          <h3 className="text-sm font-medium text-gray-500">Unique Files</h3>
-          <p className="mt-2 text-2xl font-semibold text-green-600">
-            {uniqueFiles}
-          </p>
+          <h3 className="text-lg font-medium text-gray-900">Unique Files</h3>
+          <p className="mt-2 text-3xl font-bold text-gray-900">{uniqueFiles}</p>
         </div>
         <div className="bg-white p-4 rounded-lg shadow">
-          <h3 className="text-sm font-medium text-gray-500">Deduplicated Files</h3>
-          <p className="mt-2 text-2xl font-semibold text-yellow-600">
-            {duplicatedFiles}
-          </p>
+          <h3 className="text-lg font-medium text-gray-900">Storage Savings</h3>
+          <p className="mt-2 text-3xl font-bold text-gray-900">{formatFileSize(totalStorageSavings)}</p>
         </div>
       </div>
-      
+
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                File Name
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                File
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Type
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Size
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Uploaded
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 References
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Storage Savings
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
@@ -148,8 +139,11 @@ export const FileList: React.FC = () => {
             {files?.map((file) => (
               <tr key={file.id}>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900">
-                    {file.original_filename}
+                  <div className="flex items-center">
+                    <DocumentIcon className="h-5 w-5 text-gray-400" />
+                    <div className="ml-4">
+                      <div className="text-sm font-medium text-gray-900">{file.original_filename}</div>
+                    </div>
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -162,33 +156,33 @@ export const FileList: React.FC = () => {
                   <div className="text-sm text-gray-500">{formatDate(file.uploaded_at)}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center">
-                    <DocumentDuplicateIcon className={`h-5 w-5 mr-2 ${
-                      file.reference_count > 1 ? 'text-yellow-500' : 'text-gray-400'
-                    }`} />
-                    <span className="text-sm text-gray-500">
-                      {file.reference_count} {file.reference_count === 1 ? 'reference' : 'references'}
-                    </span>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-500">
-                    {file.storage_savings > 0 ? formatFileSize(file.storage_savings) : '-'}
+                    {file.reference_count > 1 ? (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                        {file.reference_count} references
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        Unique
+                      </span>
+                    )}
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <button
-                    onClick={() => handleDownload(file.file, file.original_filename)}
-                    className="text-primary-600 hover:text-primary-900 mr-4"
-                  >
-                    Download
-                  </button>
-                  <button
-                    onClick={() => handleDelete(file.id)}
-                    className="text-red-600 hover:text-red-900"
-                  >
-                    <TrashIcon className="h-5 w-5" />
-                  </button>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <div className="flex space-x-3">
+                    <button
+                      onClick={() => handleDownload(file.file, file.original_filename)}
+                      className="text-indigo-600 hover:text-indigo-900"
+                    >
+                      <ArrowDownTrayIcon className="h-5 w-5" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(file.id)}
+                      className="text-red-600 hover:text-red-900"
+                    >
+                      <TrashIcon className="h-5 w-5" />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
