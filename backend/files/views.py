@@ -58,7 +58,7 @@ class FileViewSet(viewsets.ModelViewSet):
             return Response({'error': 'No file provided'}, status=status.HTTP_400_BAD_REQUEST)
         
         try:
-            # Create a copy of the file object to prevent it from being consumed
+            # Read the file content and calculate hash
             file_content = file_obj.read()
             file_obj.seek(0)  # Reset the file pointer
             
@@ -67,10 +67,14 @@ class FileViewSet(viewsets.ModelViewSet):
             sha256_hash.update(file_content)
             file_hash = sha256_hash.hexdigest()
             
+            # Debug print
+            print(f"Calculated hash: {file_hash}")
+            
             # Check for existing file with same hash
             existing_file = File.objects.filter(content_hash=file_hash).first()
             
             if existing_file:
+                print(f"Found existing file with hash: {existing_file.content_hash}")
                 # File already exists, increment reference count
                 existing_file.reference_count += 1
                 existing_file.save()
@@ -88,12 +92,19 @@ class FileViewSet(viewsets.ModelViewSet):
                 'original_filename': file_obj.name,
                 'file_type': file_obj.content_type,
                 'size': file_obj.size,
-                'content_hash': file_hash
+                'content_hash': file_hash  # Ensure hash is included in the data
             }
             
             serializer = self.get_serializer(data=data)
-            serializer.is_valid(raise_exception=True)
+            if not serializer.is_valid():
+                print(f"Serializer errors: {serializer.errors}")
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
             self.perform_create(serializer)
+            
+            # Verify the created file
+            created_file = File.objects.get(id=serializer.data['id'])
+            print(f"Created file hash: {created_file.content_hash}")
             
             headers = self.get_success_headers(serializer.data)
             response_data = serializer.data
@@ -102,4 +113,5 @@ class FileViewSet(viewsets.ModelViewSet):
             return Response(response_data, status=status.HTTP_201_CREATED, headers=headers)
             
         except Exception as e:
+            print(f"Error processing file: {str(e)}")
             return Response({'error': f'Error processing file: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
