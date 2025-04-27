@@ -13,7 +13,7 @@ from django.db.models import Q
 class FileFilter(django_filters.FilterSet):
     min_size = django_filters.NumberFilter(field_name="size", lookup_expr='gte')
     max_size = django_filters.NumberFilter(field_name="size", lookup_expr='lte')
-    file_type = django_filters.CharFilter(field_name="file_type", lookup_expr='icontains')
+    file_type = django_filters.CharFilter(field_name="file_type", lookup_expr='iexact')
     uploaded_after = django_filters.DateTimeFilter(field_name="uploaded_at", lookup_expr='gte')
     uploaded_before = django_filters.DateTimeFilter(field_name="uploaded_at", lookup_expr='lte')
 
@@ -26,7 +26,7 @@ class FileViewSet(viewsets.ModelViewSet):
     serializer_class = FileSerializer
     filter_backends = [django_filters.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = FileFilter
-    search_fields = ['original_filename']
+    search_fields = ['original_filename', 'file_type']
     ordering_fields = ['original_filename', 'size', 'uploaded_at', 'file_type']
     ordering = ['-uploaded_at']
 
